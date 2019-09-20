@@ -16,9 +16,11 @@ type Rules struct {
 
 const (
 	INVALID_MIN              = "%s must be not less than %d"
+	INVALID_MIN_LENGTH       = "%s must be at least %d characters"
+
 	INVALID_MAX              = "%s must be not more than %d"
 	INVALID_MAX_LENGTH       = "%s must be not more than %d characters"
-	INVALID_MIN_LENGTH       = "%s must be at least %d characters"
+
 	INVALID_REQUIRED         = "%s is required."
 	INVALID_EMAIL            = "%s must be in e-mail format."
 	INVALID_NUMERIC          = "%s must be a numeric"
@@ -118,6 +120,20 @@ func Validate(validator map[string]Rules) (errors []error) {
 	for k, v := range (validator) {
 		if strings.Contains(v.Rule, "allowempty") {
 			if (v.Value == "" || v.Value == nil) {
+				continue
+			}
+		}
+		if strings.Contains(v.Rule,"required_if"){
+			otherField := getString(v.Rule, "required_if:")
+			data:=strings.Split(otherField, ",")
+
+			testValidator:=validator[data[0]]
+			if testValidator.Value==data[1]{
+				err := required(k, fmt.Sprintf("%v", v.Value))
+				if err != nil {
+					errors = append(errors, err)
+				}
+			}else{
 				continue
 			}
 		}
