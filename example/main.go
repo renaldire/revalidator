@@ -10,14 +10,16 @@ func main(){
 	age:=19
 	email:="john@mail.com"
 	birthday:="1997-03-30"
-	payment_type:="cc"
+	gender:="male"
+	payment_type:="test"
 	cc_number:=""
 	validator:=map[string]Validator.Rules{
 		"name":{name,"required|min:5|max:10"},
 		"age":{age,"required|numeric|min:18"},
+		"gender":{gender,"required|in:male,female"},
 		"email":{email,"allowempty|email"},
 		"birthday":{birthday,"required|date"},
-		"payment type":{payment_type,"required"},
+		"payment type":{payment_type,"required|in:cc,debit,cash"},
 		"credit card number":{cc_number,"required_if:payment type,cc"},
 	}
 	err:= Validator.Validate(validator)

@@ -15,14 +15,15 @@ type Rules struct {
 }
 
 const (
-	INVALID_MIN              = "%s must be not less than %d"
-	INVALID_MIN_LENGTH       = "%s must be at least %d characters"
+	INVALID_MIN        = "%s must be not less than %d"
+	INVALID_MIN_LENGTH = "%s must be at least %d characters"
 
-	INVALID_MAX              = "%s must be not more than %d"
-	INVALID_MAX_LENGTH       = "%s must be not more than %d characters"
+	INVALID_MAX        = "%s must be not more than %d"
+	INVALID_MAX_LENGTH = "%s must be not more than %d characters"
 
 	INVALID_REQUIRED         = "%s is required."
 	INVALID_EMAIL            = "%s must be in e-mail format."
+	INVALID_IN               = "%s is invalid."
 	INVALID_NUMERIC          = "%s must be a numeric"
 	INVALID_DATE             = "%s must be in yyyy-mm-dd format."
 	INVALID_DATETIME_FORMAT  = "%s must be in yyyy-MM-dd hh:mm:ss format."
@@ -83,12 +84,12 @@ func getInt(rule, specific string) (int, error) {
 	value := strings.Split(data[1], "|")[0]
 	return strconv.Atoi(value)
 }
-func getString(rule, specific string)(string){
+func getString(rule, specific string) (string) {
 	data := strings.Split(rule, specific)
 	value := strings.Split(data[1], "|")[0]
 	return value
 }
-func getByLayout(rule,specific string,layout string)(time.Time,error){
+func getByLayout(rule, specific string, layout string) (time.Time, error) {
 	data := strings.Split(rule, specific)
 	value := strings.Split(data[1], "|")[0]
 	return time.Parse(layout, value)
@@ -114,6 +115,14 @@ func timeFormat(key, value string) (error) {
 	}
 	return nil
 }
+func in(key,value string, data []string) (error) {
+	for _, v := range (data) {
+		if v == value {
+			return nil
+		}
+	}
+	return fmt.Errorf(INVALID_IN,key)
+}
 
 func Validate(validator map[string]Rules) (errors []error) {
 
@@ -123,17 +132,17 @@ func Validate(validator map[string]Rules) (errors []error) {
 				continue
 			}
 		}
-		if strings.Contains(v.Rule,"required_if"){
+		if strings.Contains(v.Rule, "required_if") {
 			otherField := getString(v.Rule, "required_if:")
-			data:=strings.Split(otherField, ",")
+			data := strings.Split(otherField, ",")
 
-			testValidator:=validator[data[0]]
-			if testValidator.Value==data[1]{
+			testValidator := validator[data[0]]
+			if testValidator.Value == data[1] {
 				err := required(k, fmt.Sprintf("%v", v.Value))
 				if err != nil {
 					errors = append(errors, err)
 				}
-			}else{
+			} else {
 				continue
 			}
 		}
@@ -167,6 +176,13 @@ func Validate(validator map[string]Rules) (errors []error) {
 			if err != nil {
 				errors = append(errors, err)
 			}
+		}else if strings.Contains(v.Rule, "in:"){
+			value := getString(v.Rule, "in:")
+			data := strings.Split(value, ",")
+			err := in(k,fmt.Sprintf("%v", v.Value), data)
+			if err != nil {
+				errors = append(errors, err)
+			}
 		}
 		if strings.Contains(v.Rule, "max:") {
 			maxValue, err := getInt(v.Rule, "max:")
@@ -193,6 +209,7 @@ func Validate(validator map[string]Rules) (errors []error) {
 				errors = append(errors, err)
 			}
 		}
+
 
 		if strings.Contains(v.Rule, "datetime") {
 			err := datetime(k, fmt.Sprintf("%v", v.Value))
