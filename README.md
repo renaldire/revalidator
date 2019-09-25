@@ -4,7 +4,7 @@ Validator for golang.
 
 ## Instalation
 
-    go get "github.com/renaldire/revalidatoralidator"
+    go get "github.com/renaldire/revalidator"
 
 ## Usage
 
