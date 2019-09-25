@@ -2,7 +2,9 @@
 
 Validator for golang.
 
+## Instalation
 
+    go get "github.com/renaldire/revalidatoralidator"
 
 ## Usage
 
@@ -47,7 +49,8 @@ Validator for golang.
 Result:
 
     [name is required. 
-    name must be at least 5 characters age must be not less than 18 
+    name must be at least 5 characters 
+    age must be not less than 18 
     gender is required. 
     gender is invalid. 
     email must be in e-mail format. 
