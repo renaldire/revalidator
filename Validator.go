@@ -15,11 +15,11 @@ type Rules struct {
 }
 
 const (
-	INVALID_MIN        = "%s must be not less than %d"
-	INVALID_MIN_LENGTH = "%s must be at least %d characters"
+	INVALID_MIN            = "%s must be not less than %d"
+	INVALID_MIN_CHARACTERS = "%s must be at least %d characters"
 
-	INVALID_MAX        = "%s must be not more than %d"
-	INVALID_MAX_LENGTH = "%s must be not more than %d characters"
+	INVALID_MAX            = "%s must be not more than %d"
+	INVALID_MAX_CHARACTERS = "%s must be not more than %d characters"
 
 	INVALID_REQUIRED         = "%s is required."
 	INVALID_EMAIL            = "%s must be in e-mail format."
@@ -33,52 +33,37 @@ const (
 	DEFAULT_TIME_FORMAT      = "15:04:05"
 )
 
-func min_length(key, value string, min int) (error) {
-	if (len(value) < min) {
-		return fmt.Errorf(INVALID_MIN_LENGTH, key, min)
+func date(validator Rules,key string,errors *[]error)(bool){
+	if !strings.Contains(validator.Rule, "date") {
+		return false
 	}
-	return nil
-}
-func min(key string, value int, min int) (error) {
-	if (value < min) {
-		return fmt.Errorf(INVALID_MIN, key, min)
+	_, err := time.Parse(DEFAULT_DATE_FORMAT, fmt.Sprintf("%s",validator.Value))
+	if err != nil {
+		*errors=append(*errors,fmt.Errorf(INVALID_DATE, key))
 	}
-	return nil
+	return true
 }
-func max_length(key, value string, min int) (error) {
-	if (len(value) > min) {
-		return fmt.Errorf(INVALID_MAX_LENGTH, key, min)
+func datetime(validator Rules,key string,errors *[]error)(bool){
+	if !strings.Contains(validator.Rule, "datetime") {
+		return false
 	}
-	return nil
-}
-func max(key string, value, max int) (error) {
-	if (value > max) {
-		return fmt.Errorf(INVALID_MAX, key, max)
+	_, err := time.Parse(DEFAULT_DATE_TIME_FORMAT, fmt.Sprintf("%s",validator.Value))
+	if err != nil {
+		*errors=append(*errors,fmt.Errorf(INVALID_DATETIME_FORMAT, key))
 	}
-	return nil
+	return true
 }
-func required(key, value string) (error) {
-	if value == "" {
-		return fmt.Errorf(INVALID_REQUIRED, key)
+func timeFormat(validator Rules,key string,errors *[]error)(bool) {
+	if !strings.Contains(validator.Rule, "|time") && !strings.HasPrefix(validator.Rule,"time") {
+		return false
 	}
-	return nil
+	_, err := time.Parse(DEFAULT_TIME_FORMAT, fmt.Sprintf("%s",validator.Value))
+	if err != nil {
+		*errors=append(*errors,fmt.Errorf(INVALID_TIME_FORMAT, key))
+	}
+	return true
 }
-func numeric(key, value string) (error) {
-	_, err := strconv.Atoi(value)
 
-	if (err != nil) {
-		return fmt.Errorf(INVALID_NUMERIC, key)
-	}
-
-	return nil
-}
-func email(key, value string) (error) {
-	rxEmail := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-	if len(value) > 254 || !rxEmail.MatchString(value) {
-		return fmt.Errorf(INVALID_EMAIL, key)
-	}
-	return nil
-}
 func getInt(rule, specific string) (int, error) {
 	data := strings.Split(rule, specific)
 	value := strings.Split(data[1], "|")[0]
@@ -89,142 +74,139 @@ func getString(rule, specific string) (string) {
 	value := strings.Split(data[1], "|")[0]
 	return value
 }
-func getByLayout(rule, specific string, layout string) (time.Time, error) {
-	data := strings.Split(rule, specific)
-	value := strings.Split(data[1], "|")[0]
-	return time.Parse(layout, value)
-}
-func date(key, value string) (error) {
-	_, err := time.Parse(DEFAULT_DATE_FORMAT, value)
-	if err != nil {
-		return fmt.Errorf(INVALID_DATE, key)
+
+func numeric(validator Rules,key string,errors *[]error){
+	if !strings.Contains(validator.Rule, "numeric") {
+		return
 	}
-	return nil
-}
-func datetime(key, value string) (error) {
-	_, err := time.Parse(DEFAULT_DATE_TIME_FORMAT, value)
-	if err != nil {
-		return fmt.Errorf(INVALID_DATETIME_FORMAT, key)
+
+	_, err := strconv.Atoi(fmt.Sprintf("%s",validator.Value))
+	if (err != nil) {
+		*errors=append(*errors,fmt.Errorf(INVALID_NUMERIC, key))
 	}
-	return nil
 }
-func timeFormat(key, value string) (error) {
-	_, err := time.Parse(DEFAULT_TIME_FORMAT, value)
-	if err != nil {
-		return fmt.Errorf(INVALID_TIME_FORMAT, key)
+func allowEmpty(validator Rules)(bool){
+	if !strings.Contains(validator.Rule, "allowempty") {
+		return false
 	}
-	return nil
+
+	if (validator.Value == "" || validator.Value == nil) {
+		return true
+	}
+	return false
 }
-func in(key,value string, data []string) (error) {
-	for _, v := range (data) {
-		if v == value {
-			return nil
+func requiredIf(validator Rules,validators map[string]Rules,key string,errors *[]error)(bool){
+	if !strings.Contains(validator.Rule, "required_if") {
+		return false
+	}
+	otherField := getString(validator.Rule, "required_if:")
+
+	data := strings.Split(otherField, ",")
+	targetKey:=data[0]
+	targetValue:=data[1]
+
+	targetValidator := validators[targetKey]
+	if targetValidator.Value == targetValue {
+		fmt.Println("targetValidator.Value",targetValidator.Value)
+		fmt.Println("targetValue",targetValue)
+		required(validator,key,errors)
+	}
+	return true
+}
+func min(validator Rules,key string,errors *[]error){
+	if !strings.Contains(validator.Rule, "min:") {
+		return
+	}
+
+	minValue, err := getInt(validator.Rule, "min:")
+
+	switch validator.Value.(type) {
+	case int:
+		if err != nil {
+			panic("min validator rule value must be numeric")
+			os.Exit(1)
+		}
+
+		if validator.Value.(int)<minValue{
+			*errors=append(*errors,fmt.Errorf(INVALID_MIN,key,minValue))
+		}
+	case string:
+		if len(fmt.Sprintf("%s",validator.Value))<minValue{
+			*errors=append(*errors,fmt.Errorf(INVALID_MIN_CHARACTERS,key,minValue))
 		}
 	}
-	return fmt.Errorf(INVALID_IN,key)
+}
+func max(validator Rules,key string,errors *[]error){
+	if !strings.Contains(validator.Rule, "max:") {
+		return
+	}
+	maxValue, err := getInt(validator.Rule, "max:")
+
+	switch validator.Value.(type) {
+	case int:
+		if err != nil {
+			panic("max validator rule value must be numeric")
+			os.Exit(1)
+		}
+
+		if validator.Value.(int)>maxValue{
+			*errors=append(*errors,fmt.Errorf(INVALID_MAX,key,maxValue))
+		}
+	case string:
+		if len(fmt.Sprintf("%s",validator.Value))>maxValue{
+			*errors=append(*errors,fmt.Errorf(INVALID_MAX_CHARACTERS,key,maxValue))
+		}
+	}
+}
+func email(validator Rules,key string,errors *[]error){
+	if !strings.Contains(validator.Rule, "email") {
+		return
+	}
+
+	rxEmail := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	if len(fmt.Sprintf("%s",validator.Value)) > 254 || !rxEmail.MatchString(fmt.Sprintf("%s",validator.Value)) {
+		*errors=append(*errors,fmt.Errorf(INVALID_EMAIL, key))
+	}
+	return
+}
+func in(validator Rules,key string,errors *[]error){
+	if !strings.Contains(validator.Rule, "|in:") && !strings.HasPrefix(validator.Rule,"in:"){
+		return
+	}
+
+	data:=strings.Split(getString(validator.Rule, "in:"),",")
+	for _, value := range (data) {
+		if value == validator.Value {
+			return
+		}
+	}
+	*errors=append(*errors,fmt.Errorf(INVALID_IN,key))
+}
+func required(validator Rules,key string,errors *[]error){
+	if !strings.Contains(validator.Rule, "required") {
+		return
+	}
+
+	if validator.Value == "" || validator.Value == nil {
+		*errors=append(*errors,fmt.Errorf(INVALID_REQUIRED, key))
+	}
 }
 
-func Validate(validator map[string]Rules) (errors []error) {
+func Validate(validators map[string]Rules) (errors []error) {
+	for key, validator := range (validators) {
+		if allowEmpty(validator)==true { continue }
+		if requiredIf(validator,validators,key,&errors)==true { continue }
 
-	for k, v := range (validator) {
-		if strings.Contains(v.Rule, "allowempty") {
-			if (v.Value == "" || v.Value == nil) {
-				continue
-			}
-		}
-		if strings.Contains(v.Rule, "required_if") {
-			otherField := getString(v.Rule, "required_if:")
-			data := strings.Split(otherField, ",")
+		required(validator,key,&errors)
+		numeric(validator,key,&errors)
+		min(validator,key,&errors)
+		max(validator,key,&errors)
+		email(validator,key,&errors)
+		in(validator,key,&errors)
 
-			testValidator := validator[data[0]]
-			if testValidator.Value == data[1] {
-				err := required(k, fmt.Sprintf("%v", v.Value))
-				if err != nil {
-					errors = append(errors, err)
-				}
-			} else {
-				continue
-			}
-		}
-		if strings.Contains(v.Rule, "required") {
-			err := required(k, fmt.Sprintf("%v", v.Value))
-			if err != nil {
-				errors = append(errors, err)
-			}
-		}
-		if strings.Contains(v.Rule, "numeric") {
-			err := numeric(k, fmt.Sprintf("%v", v.Value))
-			if err != nil {
-				errors = append(errors, err)
-			}
-		}
-		if strings.Contains(v.Rule, "min:") {
-			minValue, err := getInt(v.Rule, "min:")
-			if err != nil {
-				panic("min validator rule value must be numeric")
-				os.Exit(1)
-			}
-
-			switch v.Value.(type) {
-			case int:
-				num, _ := v.Value.(int)
-				err = min(k, num, minValue)
-			case string:
-				err = min_length(k, fmt.Sprintf("%v", v.Value), minValue)
-			}
-
-			if err != nil {
-				errors = append(errors, err)
-			}
-		}else if strings.Contains(v.Rule, "in:"){
-			value := getString(v.Rule, "in:")
-			data := strings.Split(value, ",")
-			err := in(k,fmt.Sprintf("%v", v.Value), data)
-			if err != nil {
-				errors = append(errors, err)
-			}
-		}
-		if strings.Contains(v.Rule, "max:") {
-			maxValue, err := getInt(v.Rule, "max:")
-			if err != nil {
-				panic("min validator rule value must be numeric")
-				os.Exit(1)
-			}
-
-			switch v.Value.(type) {
-			case int:
-				num, _ := v.Value.(int)
-				err = max(k, num, maxValue)
-			case string:
-				err = max_length(k, fmt.Sprintf("%v", v.Value), maxValue)
-			}
-
-			if err != nil {
-				errors = append(errors, err)
-			}
-		}
-		if strings.Contains(v.Rule, "email") {
-			err := email(k, fmt.Sprintf("%v", v.Value))
-			if err != nil {
-				errors = append(errors, err)
-			}
-		}
-
-
-		if strings.Contains(v.Rule, "datetime") {
-			err := datetime(k, fmt.Sprintf("%v", v.Value))
-			if err != nil {
-				errors = append(errors, err)
-			}
-		} else if strings.Contains(v.Rule, "date") {
-			err := date(k, fmt.Sprintf("%v", v.Value))
-			if err != nil {
-				errors = append(errors, err)
-			}
-		} else if strings.Contains(v.Rule, "time") {
-			err := timeFormat(k, fmt.Sprintf("%v", v.Value))
-			if err != nil {
-				errors = append(errors, err)
+		if datetime(validator,key,&errors)==false {
+			if date(validator, key, &errors)==false{
+				timeFormat(validator,key,&errors)
 			}
 		}
 	}

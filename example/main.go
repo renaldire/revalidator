@@ -22,16 +22,16 @@ func main(){
 		"gender":{gender,"required|in:male,female"},
 		"email":{email,"allowempty|email"},
 		"birthday":{birthday,"required|date"},
-		"payment type":{payment_type,"required|in:cc,debit,cash"},
+		"payment type":{payment_type,"required|min:2|max:5|in:cc,debit,cash"},
 		"credit card number":{cc_number,"required_if:payment type,cc"},
 	}
-	err:= Validator.Validate(validator)
+	errs := Validator.Validate(validator)
 	end:=time.Now()
 
 	execution_time:=end.Sub(start)
 	fmt.Println("Run Time :",execution_time)
-	if err!=nil {
-		fmt.Println(err[0].Error())
+	if errs !=nil {
+		fmt.Println(errs)
 		return
 	}
 	fmt.Println("Success")
