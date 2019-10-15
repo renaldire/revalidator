@@ -2,7 +2,6 @@ package Validator
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,6 +14,7 @@ type Rules struct {
 }
 
 const (
+	LOG = "[500] Internal Server Error. %s attribute must be a numeric int.\n"
 	INVALID_MIN            = "%s must be not less than %d"
 	INVALID_MIN_CHARACTERS = "%s must be at least %d characters"
 
@@ -121,14 +121,13 @@ func min(validator Rules,key string,errors *[]error){
 	}
 
 	minValue, err := getInt(validator.Rule, "min:")
+	if err != nil {
+		fmt.Printf(LOG,"min")
+		return
+	}
 
 	switch validator.Value.(type) {
 	case int:
-		if err != nil {
-			panic("min validator rule value must be numeric")
-			os.Exit(1)
-		}
-
 		if validator.Value.(int)<minValue{
 			*errors=append(*errors,fmt.Errorf(INVALID_MIN,key,minValue))
 		}
@@ -143,14 +142,13 @@ func max(validator Rules,key string,errors *[]error){
 		return
 	}
 	maxValue, err := getInt(validator.Rule, "max:")
+	if err != nil {
+		fmt.Printf(LOG,"max")
+		return
+	}
 
 	switch validator.Value.(type) {
 	case int:
-		if err != nil {
-			panic("max validator rule value must be numeric")
-			os.Exit(1)
-		}
-
 		if validator.Value.(int)>maxValue{
 			*errors=append(*errors,fmt.Errorf(INVALID_MAX,key,maxValue))
 		}

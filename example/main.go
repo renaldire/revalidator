@@ -22,7 +22,7 @@ func main(){
 		"gender":{gender,"required|in:male,female"},
 		"email":{email,"allowempty|email"},
 		"birthday":{birthday,"required|date"},
-		"payment type":{payment_type,"required|min:2|max:5|in:cc,debit,cash"},
+		"payment type":{payment_type,"required|min:2|max:8|in:cc,debit,cash"},
 		"credit card number":{cc_number,"required_if:payment type,cc"},
 	}
 	errs := Validator.Validate(validator)
