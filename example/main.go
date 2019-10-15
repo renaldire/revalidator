@@ -12,7 +12,7 @@ func main(){
 	email:="asd"
 	birthday:="1997-03-30asd"
 	gender:=""
-	payment_type:=""
+	payment_type:="cc"
 	cc_number:=""
 
 	start:=time.Now()

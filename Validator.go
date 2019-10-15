@@ -63,7 +63,6 @@ func timeFormat(validator Rules,key string,errors *[]error)(bool) {
 	}
 	return true
 }
-
 func getInt(rule, specific string) (int, error) {
 	data := strings.Split(rule, specific)
 	value := strings.Split(data[1], "|")[0]
@@ -74,7 +73,6 @@ func getString(rule, specific string) (string) {
 	value := strings.Split(data[1], "|")[0]
 	return value
 }
-
 func numeric(validator Rules,key string,errors *[]error){
 	if !strings.Contains(validator.Rule, "numeric") {
 		return
@@ -191,11 +189,22 @@ func required(validator Rules,key string,errors *[]error){
 		*errors=append(*errors,fmt.Errorf(INVALID_REQUIRED, key))
 	}
 }
+func calendar(validator Rules,key string,errors *[]error){
+	if datetime(validator,key,errors)==false {
+		if date(validator, key, errors)==false{
+			timeFormat(validator,key,errors)
+		}
+	}
+}
+func skipValidateOtherField(validator Rules,validators map[string]Rules,key string,errors *[]error)(bool){
+	if allowEmpty(validator)==true { return true }
+	if requiredIf(validator,validators,key,errors)==true { return true }
+	return false
+}
 
 func Validate(validators map[string]Rules) (errors []error) {
 	for key, validator := range (validators) {
-		if allowEmpty(validator)==true { continue }
-		if requiredIf(validator,validators,key,&errors)==true { continue }
+		if skipValidateOtherField(validator,validators,key,&errors)==true {continue}
 
 		required(validator,key,&errors)
 		numeric(validator,key,&errors)
@@ -203,12 +212,7 @@ func Validate(validators map[string]Rules) (errors []error) {
 		max(validator,key,&errors)
 		email(validator,key,&errors)
 		in(validator,key,&errors)
-
-		if datetime(validator,key,&errors)==false {
-			if date(validator, key, &errors)==false{
-				timeFormat(validator,key,&errors)
-			}
-		}
+		calendar(validator,key,&errors)
 	}
 	return
 }
