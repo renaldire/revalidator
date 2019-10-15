@@ -84,6 +84,10 @@ func numeric(validator Rules,key string,errors *[]error){
 	if (err != nil) {
 		*errors=append(*errors,fmt.Errorf(INVALID_NUMERIC, key))
 	}
+	regex := regexp.MustCompile("[0-9]*")
+	if !regex.MatchString(fmt.Sprintf("%s",validator.Value)) {
+		*errors=append(*errors,fmt.Errorf(INVALID_EMAIL, key))
+	}
 }
 func allowEmpty(validator Rules)(bool){
 	if !strings.Contains(validator.Rule, "allowempty") {
@@ -163,8 +167,8 @@ func email(validator Rules,key string,errors *[]error){
 		return
 	}
 
-	rxEmail := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-	if len(fmt.Sprintf("%s",validator.Value)) > 254 || !rxEmail.MatchString(fmt.Sprintf("%s",validator.Value)) {
+	regex := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	if len(fmt.Sprintf("%s",validator.Value)) > 254 || !regex.MatchString(fmt.Sprintf("%s",validator.Value)) {
 		*errors=append(*errors,fmt.Errorf(INVALID_EMAIL, key))
 	}
 	return
