@@ -111,8 +111,6 @@ func requiredIf(validator Rules,validators map[string]Rules,key string,errors *[
 
 	targetValidator := validators[targetKey]
 	if targetValidator.Value == targetValue {
-		fmt.Println("targetValidator.Value",targetValidator.Value)
-		fmt.Println("targetValue",targetValue)
 		required(validator,key,errors)
 	}
 	return true
