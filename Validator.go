@@ -63,13 +63,13 @@ func timeFormat(validator Rules,key string,errors *[]error)(bool) {
 	}
 	return true
 }
-func getInt(rule, specific string) (int, error) {
-	data := strings.Split(rule, specific)
+func getInt(rule, attribute string) (int, error) {
+	data := strings.Split(rule, attribute)
 	value := strings.Split(data[1], "|")[0]
 	return strconv.Atoi(value)
 }
-func getString(rule, specific string) (string) {
-	data := strings.Split(rule, specific)
+func getString(rule, attribute string) (string) {
+	data := strings.Split(rule, attribute)
 	value := strings.Split(data[1], "|")[0]
 	return value
 }
