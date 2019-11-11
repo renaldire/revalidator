@@ -19,7 +19,7 @@ Validator for golang.
 	
 ## What's new
 
-    Unique rule 
+    ##Unique rule 
 	Set Validator Environtment
 	
 	Validator.ConnectionString="Your Connection String here"
