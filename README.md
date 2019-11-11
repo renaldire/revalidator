@@ -19,8 +19,9 @@ Validator for golang.
 	
 ## What's new
 
-    ##Unique rule 
-	Set Validator Environtment
+    Unique rule 
+	
+	To use this rule, you have to set Validator environtment
 	
 	Validator.ConnectionString="Your Connection String here"
     Validator.DbDriver="postgres" // postgres || mysql
