@@ -2,6 +2,7 @@ package Validator
 
 const (
 	regexEmail = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+	regexNotNumeric = "\\D"
 
 	log                  = "[500] Internal Server Error. %s attribute must be a numeric int.\n"
 	invalidMin           = "%s must be not less than %d"

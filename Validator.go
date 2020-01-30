@@ -90,13 +90,9 @@ func numeric(validator Rules, key string, errors *[]error) {
 		return
 	}
 
-	_, err := strconv.Atoi(fmt.Sprintf("%s", validator.Value))
-	if (err != nil) {
+	regex := regexp.MustCompile(regexNotNumeric)
+	if regex.MatchString(fmt.Sprintf("%s", validator.Value)) {
 		*errors = append(*errors, fmt.Errorf(invalidNumeric, key))
-	}
-	regex := regexp.MustCompile("[0-9]*")
-	if !regex.MatchString(fmt.Sprintf("%s", validator.Value)) {
-		*errors = append(*errors, fmt.Errorf(invalidEmail, key))
 	}
 }
 func allowEmpty(validator Rules) (bool) {

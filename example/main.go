@@ -8,7 +8,7 @@ import (
 
 func main(){
 	name:=""
-	age:=10
+	age:="103120381381907401701294112312313123131435435345346654"
 	email:="asd"
 	birthday:="1997-03-30asd"
 	gender:=""
