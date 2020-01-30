@@ -31,7 +31,7 @@ func unique(validator Rules, key string, errors *[]error) {
 	if err == sql.ErrNoRows {
 		*errors = append(*errors, err)
 		return
-	} else if err!=nil{
+	} else if err != nil {
 		panic(err.Error())
 	}
 
@@ -45,7 +45,7 @@ func unique(validator Rules, key string, errors *[]error) {
 		return
 	}
 }
-func date(validator Rules, key string, errors *[]error) (bool) {
+func date(validator Rules, key string, errors *[]error) bool {
 	if !strings.Contains(validator.Rule, "date") {
 		return false
 	}
@@ -55,7 +55,7 @@ func date(validator Rules, key string, errors *[]error) (bool) {
 	}
 	return true
 }
-func datetime(validator Rules, key string, errors *[]error) (bool) {
+func datetime(validator Rules, key string, errors *[]error) bool {
 	if !strings.Contains(validator.Rule, "datetime") {
 		return false
 	}
@@ -65,7 +65,7 @@ func datetime(validator Rules, key string, errors *[]error) (bool) {
 	}
 	return true
 }
-func timeFormat(validator Rules, key string, errors *[]error) (bool) {
+func timeFormat(validator Rules, key string, errors *[]error) bool {
 	if !strings.Contains(validator.Rule, "|time") && !strings.HasPrefix(validator.Rule, "time") {
 		return false
 	}
@@ -80,32 +80,37 @@ func getInt(rule, attribute string) (int, error) {
 	value := strings.Split(data[1], "|")[0]
 	return strconv.Atoi(value)
 }
-func getString(rule, attribute string) (string) {
+func getString(rule, attribute string) string {
 	data := strings.Split(rule, attribute)
 	value := strings.Split(data[1], "|")[0]
 	return value
+}
+func checkRegex(validator Rules, key,regexPattern string) bool {
+	regex := regexp.MustCompile(regexPattern)
+	if !regex.MatchString(fmt.Sprintf("%s", validator.Value)) {
+		return false
+	}
+	return true
 }
 func numeric(validator Rules, key string, errors *[]error) {
 	if !strings.Contains(validator.Rule, "numeric") {
 		return
 	}
-
-	regex := regexp.MustCompile(regexNotNumeric)
-	if regex.MatchString(fmt.Sprintf("%s", validator.Value)) {
+	if checkRegex(validator,key, RegexNotNumeric)==true{
 		*errors = append(*errors, fmt.Errorf(invalidNumeric, key))
 	}
 }
-func allowEmpty(validator Rules) (bool) {
+func allowEmpty(validator Rules) bool {
 	if !strings.Contains(validator.Rule, "allowempty") {
 		return false
 	}
 
-	if (validator.Value == "" || validator.Value == nil) {
+	if validator.Value == "" || validator.Value == nil {
 		return true
 	}
 	return false
 }
-func requiredIf(validator Rules, validators map[string]Rules, key string, errors *[]error) (bool) {
+func requiredIf(validator Rules, validators map[string]Rules, key string, errors *[]error) bool {
 	if !strings.Contains(validator.Rule, "required_if") {
 		return false
 	}
@@ -128,7 +133,7 @@ func min(validator Rules, key string, errors *[]error) {
 
 	minValue, err := getInt(validator.Rule, "min:")
 	if err != nil {
-		fmt.Printf(log, "min")
+		panic("min attribute value must be numeric")
 		return
 	}
 
@@ -149,7 +154,7 @@ func max(validator Rules, key string, errors *[]error) {
 	}
 	maxValue, err := getInt(validator.Rule, "max:")
 	if err != nil {
-		fmt.Printf(log, "max")
+		panic("max attribute value must be numeric")
 		return
 	}
 
@@ -169,8 +174,9 @@ func email(validator Rules, key string, errors *[]error) {
 		return
 	}
 
-	regex := regexp.MustCompile(regexEmail)
-	if len(fmt.Sprintf("%s", validator.Value)) > 254 || !regex.MatchString(fmt.Sprintf("%s", validator.Value)) {
+	value:=fmt.Sprintf("%s",validator.Value)
+
+	if len(value) > 254 || checkRegex(validator,key, RegexEmail)==false {
 		*errors = append(*errors, fmt.Errorf(invalidEmail, key))
 	}
 	return
@@ -181,7 +187,7 @@ func in(validator Rules, key string, errors *[]error) {
 	}
 
 	data := strings.Split(getString(validator.Rule, "in:"), ",")
-	for _, value := range (data) {
+	for _, value := range data {
 		if value == validator.Value {
 			return
 		}
@@ -204,7 +210,7 @@ func calendar(validator Rules, key string, errors *[]error) {
 		}
 	}
 }
-func allowedEmptyOrDependsOtherField(validator Rules, validators map[string]Rules, key string, errors *[]error) (bool) {
+func allowedEmptyOrDependsOtherField(validator Rules, validators map[string]Rules, key string, errors *[]error) bool {
 	if allowEmpty(validator) == true {
 		return true
 	}
@@ -213,44 +219,56 @@ func allowedEmptyOrDependsOtherField(validator Rules, validators map[string]Rule
 	}
 	return false
 }
-func startsWith(validator Rules, key string, errors *[]error){
+func startsWith(validator Rules, key string, errors *[]error) {
 	if !strings.Contains(validator.Rule, "starts_with:") {
 		return
 	}
 
-	targetPrefix:=getString(validator.Rule,"starts_with:")
-	value:=fmt.Sprintf("%s",validator.Value)
+	targetPrefix := getString(validator.Rule, "starts_with:")
+	value := fmt.Sprintf("%s", validator.Value)
 
-	if len(value)<len(targetPrefix){
-		*errors = append(*errors, fmt.Errorf(invalidStartsWith, key,targetPrefix))
+	if len(value) < len(targetPrefix) {
+		*errors = append(*errors, fmt.Errorf(invalidStartsWith, key, targetPrefix))
 		return
 	}
 
-	if value[0:len(targetPrefix)-1]!=targetPrefix{
-		*errors = append(*errors, fmt.Errorf(invalidStartsWith, key,targetPrefix))
-		return
+	if value[0:len(targetPrefix)-1] != targetPrefix {
+		*errors = append(*errors, fmt.Errorf(invalidStartsWith, key, targetPrefix))
 	}
 }
-func endsWith(validator Rules, key string, errors *[]error){
+func endsWith(validator Rules, key string, errors *[]error) {
 	if !strings.Contains(validator.Rule, "ends_with:") {
 		return
 	}
 
-	targetPrefix:=getString(validator.Rule,"ends_with:")
-	value:=fmt.Sprintf("%s",validator.Value)
+	targetPrefix := getString(validator.Rule, "ends_with:")
+	value := fmt.Sprintf("%s", validator.Value)
 
-	if len(value)<len(targetPrefix){
-		*errors = append(*errors, fmt.Errorf(invalidEndsWith, key,targetPrefix))
+	if len(value) < len(targetPrefix) {
+		*errors = append(*errors, fmt.Errorf(invalidEndsWith, key, targetPrefix))
 		return
 	}
 
-	if value[len(value)-len(targetPrefix):]!=targetPrefix{
-		*errors = append(*errors, fmt.Errorf(invalidEndsWith, key,targetPrefix))
-		return
+	if value[len(value)-len(targetPrefix):] != targetPrefix {
+		*errors = append(*errors, fmt.Errorf(invalidEndsWith, key, targetPrefix))
 	}
 }
+func regex(validator Rules,key string,errors *[]error){
+	if !strings.Contains(validator.Rule,"regex:"){
+		return
+	}
+
+	targetRegex:=getString(validator.Rule,"regex:")
+
+	if checkRegex(validator,key,targetRegex)==false{
+		*errors = append(*errors, fmt.Errorf(invalidRegex, key))
+	}
+}
+
 func Validate(validators map[string]Rules) (errors []error) {
-	for key, validator := range (validators) {
+	for key, validator := range validators {
+		validator.Value=strings.TrimSpace(fmt.Sprintf("%s",validator.Value))
+
 		if allowedEmptyOrDependsOtherField(validator, validators, key, &errors) == true {
 			continue
 		}
@@ -263,8 +281,9 @@ func Validate(validators map[string]Rules) (errors []error) {
 		in(validator, key, &errors)
 		unique(validator, key, &errors)
 		calendar(validator, key, &errors)
-		startsWith(validator,key,&errors)
-		endsWith(validator,key,&errors)
+		startsWith(validator, key, &errors)
+		endsWith(validator, key, &errors)
+		regex(validator,key,&errors)
 	}
 	return
 }

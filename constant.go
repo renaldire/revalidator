@@ -1,10 +1,11 @@
 package Validator
 
 const (
-	regexEmail = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
-	regexNotNumeric = "\\D"
+	RegexEmail             = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+	RegexNotNumeric        = "\\D"
+	RegexAlphabet          = "^[A-Za-z]+$"
+	RegexAlphabetWithSpace = "^[A-Za-z ]+$"
 
-	log                  = "[500] Internal Server Error. %s attribute must be a numeric int.\n"
 	invalidMin           = "%s must be not less than %d"
 	invalidMinCharacters = "%s must be at least %d characters"
 
@@ -12,7 +13,8 @@ const (
 	invalidMaxCharacters = "%s must be not more than %d characters"
 
 	invalidStartsWith = "%s must be starts with '%s'"
-	invalidEndsWith = "%s must be ends with '%s'"
+	invalidEndsWith   = "%s must be ends with '%s'"
+	invalidRegex      = "invalid %s format"
 
 	invalidRequired       = "%s is required."
 	invalidEmail          = "%s must be in e-mail format."
