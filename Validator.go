@@ -1,7 +1,6 @@
 package Validator
 
 import (
-	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
@@ -11,49 +10,10 @@ import (
 	"time"
 )
 
-type Rules struct {
-	Value interface{}
-	Rule  string
-}
-
-const (
-	log                  = "[500] Internal Server Error. %s attribute must be a numeric int.\n"
-	invalidMin           = "%s must be not less than %d"
-	invalidMinCharacters = "%s must be at least %d characters"
-
-	invalidMax           = "%s must be not more than %d"
-	invalidMaxCharacters = "%s must be not more than %d characters"
-
-	invalidRequired       = "%s is required."
-	invalidEmail          = "%s must be in e-mail format."
-	invalidIn             = "%s is invalid."
-	invalidNumeric        = "%s must be a numeric"
-	invalidUnique         = "%s is already exists."
-	invalidDate           = "%s must be in yyyy-mm-dd format."
-	invalidDateTime       = "%s must be in yyyy-MM-dd hh:mm:ss format."
-	invalidTime           = "%s must be in hh:mm:ss format."
-	defaultDateFormat     = "2006-01-02"
-	defaultDateTimeFormat = "2006-01-02T15:04:05"
-	defaultTimeFormat     = "15:04:05"
-)
-
 var (
 	ConnectionString = ""
 	DbDriver         = "" // example : postgres, mysql
 )
-
-var db *sql.DB
-
-func getDb() *sql.DB {
-	if db == nil {
-		var err error
-		db, err = sql.Open(DbDriver, ConnectionString)
-		if err != nil {
-			panic(err.Error())
-		}
-	}
-	return db
-}
 
 func unique(validator Rules, key string, errors *[]error) {
 	if !strings.Contains(validator.Rule, "unique:") {
@@ -80,8 +40,6 @@ func unique(validator Rules, key string, errors *[]error) {
 	row := stmt.QueryRow(validator.Value)
 	var result bool
 	row.Scan(&result)
-
-	fmt.Println("result", result)
 
 	if result == true {
 		err = fmt.Errorf(invalidUnique, key)
@@ -252,7 +210,7 @@ func calendar(validator Rules, key string, errors *[]error) {
 		}
 	}
 }
-func skipValidateOtherField(validator Rules, validators map[string]Rules, key string, errors *[]error) (bool) {
+func allowedEmptyOrDependsOtherField(validator Rules, validators map[string]Rules, key string, errors *[]error) (bool) {
 	if allowEmpty(validator) == true {
 		return true
 	}
@@ -264,7 +222,7 @@ func skipValidateOtherField(validator Rules, validators map[string]Rules, key st
 
 func Validate(validators map[string]Rules) (errors []error) {
 	for key, validator := range (validators) {
-		if skipValidateOtherField(validator, validators, key, &errors) == true {
+		if allowedEmptyOrDependsOtherField(validator, validators, key, &errors) == true {
 			continue
 		}
 
