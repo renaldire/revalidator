@@ -14,7 +14,9 @@ func main(){
 	gender:=""
 	payment_type:="cc"
 	cc_number:=""
-	username:="john"
+	address:="Nut Farm Street"
+	site:="renaldi.xyz"
+	//username:="john"
 
 	// Set Validator Environtment
 	// This only required once, only if you have to check unique value in database
@@ -26,10 +28,12 @@ func main(){
 	// Validator Usages
 	validator:=map[string]Validator.Rules{
 		"name":{name,"required|min:5|max:10"},
-		"username":{username,"required|unique:users,username"}, // unique format: unique:table,column
+		//"username":{username,"required|unique:users,username"}, // unique format: unique:table,column
 		"age":{age,"required|numeric|min:18"},
 		"gender":{gender,"in:male,female"}, //in format: in:value1,value2,...valueN
+		"address":{address,"ends_with:Street"},
 		"email":{email,"allowempty|email"},
+		"site":{site,"allowempty|starts_with:http://"},
 		"birthday":{birthday,"required|date"},
 		"payment type":{payment_type,"required|min:2|max:8|in:cc,debit,cash"},
 		"credit card number":{cc_number,"required_if:payment type,cc"}, //required_if format: required_if:desiredField,desiredValue

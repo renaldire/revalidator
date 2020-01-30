@@ -18,7 +18,12 @@ Validator for golang.
 	}
 	
 ## What's new
+    Jan 30, 2020
+    ============
+    Starts With & Ends With Rule
 
+    Nov 11,2019
+    ===========
     Unique rule 
 	
 	To use this rule, you have to set Validator environtment
@@ -84,4 +89,6 @@ Result:
 | datetime    | yyyy-mm-dd hh:mm:ss                                                                                                                   |
 | time        | hh:mm:ss                                                                                                                              |
 | in          | field only valid if the value is one of the defined value in rule.   Example: Gender can only be male or female. Rule: in:male,female |
-| unique      | field must be unique in database Example: Validate if the username is already taken or not.                                           |
+| unique      | field must be unique in database Example: Validate if the username is already taken or not.          
+| starts_with      | field must be starts with certain string  |
+| ends_with      | field must be ends with certain string  |

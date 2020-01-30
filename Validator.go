@@ -1,6 +1,7 @@
 package Validator
 
 import (
+	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
@@ -8,11 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-)
-
-var (
-	ConnectionString = ""
-	DbDriver         = "" // example : postgres, mysql
 )
 
 func unique(validator Rules, key string, errors *[]error) {
@@ -32,9 +28,11 @@ func unique(validator Rules, key string, errors *[]error) {
 	statement := fmt.Sprintf("SELECT EXISTS(SELECT %s FROM %s WHERE %s=$1)", column, table, column)
 	stmt, err := getDb().Prepare(statement)
 
-	if err != nil {
+	if err == sql.ErrNoRows {
 		*errors = append(*errors, err)
 		return
+	} else if err!=nil{
+		panic(err.Error())
 	}
 
 	row := stmt.QueryRow(validator.Value)
@@ -219,7 +217,42 @@ func allowedEmptyOrDependsOtherField(validator Rules, validators map[string]Rule
 	}
 	return false
 }
+func startsWith(validator Rules, key string, errors *[]error){
+	if !strings.Contains(validator.Rule, "starts_with:") {
+		return
+	}
 
+	targetPrefix:=getString(validator.Rule,"starts_with:")
+	value:=fmt.Sprintf("%s",validator.Value)
+
+	if len(value)<len(targetPrefix){
+		*errors = append(*errors, fmt.Errorf(invalidStartsWith, key,targetPrefix))
+		return
+	}
+
+	if value[0:len(targetPrefix)-1]!=targetPrefix{
+		*errors = append(*errors, fmt.Errorf(invalidStartsWith, key,targetPrefix))
+		return
+	}
+}
+func endsWith(validator Rules, key string, errors *[]error){
+	if !strings.Contains(validator.Rule, "ends_with:") {
+		return
+	}
+
+	targetPrefix:=getString(validator.Rule,"ends_with:")
+	value:=fmt.Sprintf("%s",validator.Value)
+
+	if len(value)<len(targetPrefix){
+		*errors = append(*errors, fmt.Errorf(invalidEndsWith, key,targetPrefix))
+		return
+	}
+
+	if value[len(value)-len(targetPrefix):]!=targetPrefix{
+		*errors = append(*errors, fmt.Errorf(invalidEndsWith, key,targetPrefix))
+		return
+	}
+}
 func Validate(validators map[string]Rules) (errors []error) {
 	for key, validator := range (validators) {
 		if allowedEmptyOrDependsOtherField(validator, validators, key, &errors) == true {
@@ -234,6 +267,8 @@ func Validate(validators map[string]Rules) (errors []error) {
 		in(validator, key, &errors)
 		unique(validator, key, &errors)
 		calendar(validator, key, &errors)
+		startsWith(validator,key,&errors)
+		endsWith(validator,key,&errors)
 	}
 	return
 }

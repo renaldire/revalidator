@@ -10,6 +10,9 @@ const (
 	invalidMax           = "%s must be not more than %d"
 	invalidMaxCharacters = "%s must be not more than %d characters"
 
+	invalidStartsWith = "%s must be starts with '%s'"
+	invalidEndsWith = "%s must be ends with '%s'"
+
 	invalidRequired       = "%s is required."
 	invalidEmail          = "%s must be in e-mail format."
 	invalidIn             = "%s is invalid."
