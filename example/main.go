@@ -28,6 +28,8 @@ func main() {
 
 	// Validator Usages
 	validator := map[string]Validator.Rules{
+		// fieldName : {value, rule},
+		
 		"full name": {fullName, "required|regex:" + Validator.RegexAlphabetWithSpace},
 		"name":      {name, "required|min:5|max:10|regex:" + Validator.RegexAlphabet},
 		//"username":{username,"required|unique:users,username"}, // unique format: unique:table,column
