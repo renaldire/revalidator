@@ -78,6 +78,9 @@ Result:
 
 ## Rules
 
+Notes:
+Every value will be trimmed before being validate.
+
 |     Rule    |                                                              Description                                                              |
 |:-----------:|:-------------------------------------------------------------------------------------------------------------------------------------:|
 | allowempty  | allow field to be empty, and once the field is not empty, allow other rules to be apply                                               |
