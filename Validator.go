@@ -175,7 +175,7 @@ func email(validator Rules, key string, errors *[]error) {
 		return
 	}
 
-	regex := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	regex := regexp.MustCompile(regexEmail)
 	if len(fmt.Sprintf("%s", validator.Value)) > 254 || !regex.MatchString(fmt.Sprintf("%s", validator.Value)) {
 		*errors = append(*errors, fmt.Errorf(invalidEmail, key))
 	}
