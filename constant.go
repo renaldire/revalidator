@@ -1,10 +1,12 @@
 package Validator
 
 const (
-	RegexEmail             = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
-	RegexNotNumeric        = "\\D"
-	RegexAlphabet          = "^[A-Za-z]+$"
-	RegexAlphabetWithSpace = "^[A-Za-z ]+$"
+	RegexEmail                 = "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+	RegexNotNumeric            = "\\D"
+	RegexAlphabet              = "^[A-Za-z]+$"
+	RegexAlphabetWithSpace     = "^[A-Za-z ]+$"
+	RegexAlphanumeric          = "^[A-Za-z0-9]+$"
+	RegexAlphanumericWithSpace = "^[A-Za-z0-9 ]+$"
 
 	invalidMin           = "%s must be not less than %d"
 	invalidMinCharacters = "%s must be at least %d characters"
