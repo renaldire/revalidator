@@ -7,7 +7,7 @@ import (
 )
 
 type User struct {
-	Name        string `rule:"required|min:5|max:10"`
+	Name        string `rule:"required|min:5|max:10|regex:^[A-Za-z]+$"`
 	FullName    string `rule:"required"`
 	Age         string `rule:"required|numeric|min:18"`
 	Email       string `rule:"allowempty|email"`
@@ -59,8 +59,7 @@ func main() {
 	// Get All Errors based on defined rule
 	errs := Validator.Validate(validator)
 
-	end := time.Now()
-	execution_time := end.Sub(start)
+	execution_time := time.Since(start)
 	fmt.Println("\nRun Time for Validate :", execution_time)
 
 	if errs != nil {
@@ -69,6 +68,8 @@ func main() {
 	}
 
 	// Validate certain struct
+	// rule is defined in the struct tag
+
 	start = time.Now()
 	user := User{
 		Name:        name,
@@ -84,8 +85,8 @@ func main() {
 	}
 
 	errs = Validator.ValidateStruct(user)
-	end = time.Now()
-	execution_time = end.Sub(start)
+
+	execution_time = time.Since(start)
 	fmt.Println("\nRun Time for ValidateStruct :", execution_time)
 
 	if errs != nil {
