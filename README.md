@@ -18,6 +18,20 @@ Validator for golang.
 	}
 	
 ## What's new
+    Feb 03, 2020
+    ============
+    - Bug Fixes
+    - Validate using Struct
+    
+    type User struct {
+    	Name        string `rule:"required|min:5|max:10|regex:^[A-Za-z]+$"`
+    	FullName    string `rule:"required"`
+    }
+    ...
+    errs = Validator.ValidateStruct(user)
+    ...
+    // More Example already provided in example package
+    
     Jan 30, 2020
     ============
     - Starts With Rule
