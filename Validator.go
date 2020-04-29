@@ -12,17 +12,41 @@ import (
 	"time"
 )
 
-func getRule(rules, targetRule string) (string,bool) {
+func getRule(rules, targetRule string) (string, bool) {
 	//return !strings.Contains(rules, "|"+targetRule) && !strings.HasPrefix(rules, targetRule)
-	for _,v:=range strings.Split(rules,"|") {
-		if strings.HasPrefix(v, targetRule){
-			return v,true
+	for _, v := range strings.Split(rules, "|") {
+		if strings.HasPrefix(v, targetRule) {
+			return v, true
 		}
 	}
-	return "",false
+	return "", false
 }
-func unique(validator Rules, key string, errors *[]error) {
-	uniqueRule,ok:=getRule(validator.Rule, "unique")
+func getIntRuleValue(rule string) (int, error) {
+	data := strings.Split(rule, ":")
+	value := data[1]
+	return strconv.Atoi(value)
+}
+func getStringRuleValue(rule string) string {
+	data := strings.Split(rule, ":")
+	value := data[1]
+	return value
+}
+func setError(message string, rule Rule) error {
+	if rule.CustomMessage != "" {
+		return fmt.Errorf(rule.CustomMessage)
+	}
+	return fmt.Errorf(message)
+}
+func checkRegex(rule Rule, key, regexPattern string) bool {
+	regex := regexp.MustCompile(regexPattern)
+	if !regex.MatchString(fmt.Sprintf("%s", rule.Value)) {
+		return false
+	}
+	return true
+}
+
+func unique(rule Rule, key string, errors *[]error) {
+	uniqueRule, ok := getRule(rule.Rule, "unique")
 	if !ok {
 		return
 	}
@@ -46,7 +70,7 @@ func unique(validator Rules, key string, errors *[]error) {
 		panic(err.Error())
 	}
 
-	row := stmt.QueryRow(validator.Value)
+	row := stmt.QueryRow(rule.Value)
 	var result bool
 	row.Scan(&result)
 
@@ -56,78 +80,65 @@ func unique(validator Rules, key string, errors *[]error) {
 		return
 	}
 }
-func date(validator Rules, key string, errors *[]error) bool {
-	_,ok:=getRule(validator.Rule, "date")
+func date(rule Rule, key string, errors *[]error) bool {
+	_, ok := getRule(rule.Rule, "date")
 	if !ok {
 		return false
 	}
-	_, err := time.Parse(defaultDateFormat, fmt.Sprintf("%s", validator.Value))
+	_, err := time.Parse(defaultDateFormat, fmt.Sprintf("%s", rule.Value))
 	if err != nil {
-		*errors = append(*errors, fmt.Errorf(invalidDate, key))
+		errMessage := fmt.Sprintf(invalidDate, key)
+		*errors = append(*errors, setError(errMessage, rule))
 	}
 	return true
 }
-func datetime(validator Rules, key string, errors *[]error) bool {
-	_,ok:=getRule(validator.Rule, "datetime")
+func datetime(rule Rule, key string, errors *[]error) bool {
+	_, ok := getRule(rule.Rule, "datetime")
 	if !ok {
 		return false
 	}
-	_, err := time.Parse(defaultDateTimeFormat, fmt.Sprintf("%s", validator.Value))
+	_, err := time.Parse(defaultDateTimeFormat, fmt.Sprintf("%s", rule.Value))
 	if err != nil {
-		*errors = append(*errors, fmt.Errorf(invalidDateTime, key))
+		errMessage := fmt.Sprintf(invalidDateTime, key)
+		*errors = append(*errors, setError(errMessage, rule))
 	}
 	return true
 }
-func timeFormat(validator Rules, key string, errors *[]error) bool {
-	_,ok:=getRule(validator.Rule, "time")
+func timeFormat(rule Rule, key string, errors *[]error) bool {
+	_, ok := getRule(rule.Rule, "time")
 	if !ok {
 		return false
 	}
-	_, err := time.Parse(defaultTimeFormat, fmt.Sprintf("%s", validator.Value))
+	_, err := time.Parse(defaultTimeFormat, fmt.Sprintf("%s", rule.Value))
 	if err != nil {
-		*errors = append(*errors, fmt.Errorf(invalidTime, key))
+		errMessage := fmt.Sprintf(invalidTime, key)
+		*errors = append(*errors, setError(errMessage, rule))
 	}
 	return true
 }
-func getIntRuleValue(rule string) (int, error) {
-	data := strings.Split(rule, ":")
-	value := data[1]
-	return strconv.Atoi(value)
-}
-func getStringRuleValue(rule string) string {
-	data := strings.Split(rule,":")
-	value := data[1]
-	return value
-}
-func checkRegex(validator Rules, key, regexPattern string) bool {
-	regex := regexp.MustCompile(regexPattern)
-	if !regex.MatchString(fmt.Sprintf("%s", validator.Value)) {
-		return false
-	}
-	return true
-}
-func numeric(validator Rules, key string, errors *[]error) {
-	_,ok:=getRule(validator.Rule, "numeric")
+func numeric(rule Rule, key string, errors *[]error) {
+	_, ok := getRule(rule.Rule, "numeric")
 	if !ok {
 		return
 	}
-	if checkRegex(validator, key, RegexNotNumeric) == true {
-		*errors = append(*errors, fmt.Errorf(invalidNumeric, key))
+	if checkRegex(rule, key, RegexNotNumeric) == true {
+		errMessage := fmt.Sprintf(invalidNumeric, key)
+		*errors = append(*errors, setError(errMessage, rule))
 	}
 }
-func allowEmpty(validator Rules) bool {
-	_,ok:=getRule(validator.Rule, "allowempty")
+func allowEmpty(rule Rule) bool {
+	_, ok := getRule(rule.Rule, "allowempty")
 	if !ok {
 		return false
 	}
 
-	if validator.Value == "" || validator.Value == nil {
+	if rule.Value == "" || rule.Value == nil {
 		return true
 	}
 	return false
 }
-func requiredIf(validator Rules, validators map[string]Rules, key string, errors *[]error) bool {
-	requiredIfRule,ok:=getRule(validator.Rule, "required_if:")
+func requiredIf(rule Rule, validators map[string]Rule, key string, errors *[]error) bool {
+	requiredIfRule, ok := getRule(rule.Rule, "required_if:")
 	if !ok {
 		return false
 	}
@@ -141,12 +152,12 @@ func requiredIf(validator Rules, validators map[string]Rules, key string, errors
 	targetValidator := validators[targetKey]
 
 	if targetValidator.Value == targetValue {
-		required(validator, key, errors)
+		required(rule, key, errors)
 	}
 	return true
 }
-func min(validator Rules, key string, errors *[]error) {
-	minRule,ok:=getRule(validator.Rule, "min:")
+func min(rule Rule, key string, errors *[]error) {
+	minRule, ok := getRule(rule.Rule, "min:")
 	if !ok {
 		return
 	}
@@ -157,19 +168,21 @@ func min(validator Rules, key string, errors *[]error) {
 		return
 	}
 
-	switch validator.Value.(type) {
+	switch rule.Value.(type) {
 	case int:
-		if validator.Value.(int) < minValue {
-			*errors = append(*errors, fmt.Errorf(invalidMin, key, minValue))
+		if rule.Value.(int) < minValue {
+			errMessage := fmt.Sprintf(invalidMin, key, minValue)
+			*errors = append(*errors, setError(errMessage, rule))
 		}
 	case string:
-		if len(fmt.Sprintf("%s", validator.Value)) < minValue {
-			*errors = append(*errors, fmt.Errorf(invalidMinCharacters, key, minValue))
+		if len(fmt.Sprintf("%s", rule.Value)) < minValue {
+			errMessage := fmt.Sprintf(invalidMinCharacters, key, minValue)
+			*errors = append(*errors, setError(errMessage, rule))
 		}
 	}
 }
-func max(validator Rules, key string, errors *[]error) {
-	maxRule,ok:=getRule(validator.Rule, "max:")
+func max(rule Rule, key string, errors *[]error) {
+	maxRule, ok := getRule(rule.Rule, "max:")
 	if !ok {
 		return
 	}
@@ -179,120 +192,130 @@ func max(validator Rules, key string, errors *[]error) {
 		return
 	}
 
-	switch validator.Value.(type) {
+	switch rule.Value.(type) {
 	case int:
-		if validator.Value.(int) > maxValue {
-			*errors = append(*errors, fmt.Errorf(invalidMax, key, maxValue))
+		if rule.Value.(int) > maxValue {
+			errMessage := fmt.Sprintf(invalidMax, key, maxValue)
+			*errors = append(*errors, setError(errMessage, rule))
 		}
 	case string:
-		if len(fmt.Sprintf("%s", validator.Value)) > maxValue {
-			*errors = append(*errors, fmt.Errorf(invalidMaxCharacters, key, maxValue))
+		if len(fmt.Sprintf("%s", rule.Value)) > maxValue {
+			errMessage := fmt.Sprintf(invalidMaxCharacters, key, maxValue)
+			*errors = append(*errors, setError(errMessage, rule))
 		}
 	}
 }
-func email(validator Rules, key string, errors *[]error) {
-	_,ok:=getRule(validator.Rule, "email")
+func email(rule Rule, key string, errors *[]error) {
+	_, ok := getRule(rule.Rule, "email")
 	if !ok {
 		return
 	}
 
-	value := fmt.Sprintf("%s", validator.Value)
+	value := fmt.Sprintf("%s", rule.Value)
 
-	if len(value) > 254 || checkRegex(validator, key, RegexEmail) == false {
-		*errors = append(*errors, fmt.Errorf(invalidEmail, key))
+	if len(value) > 254 || checkRegex(rule, key, RegexEmail) == false {
+		errMessage := fmt.Sprintf(invalidEmail, key)
+		*errors = append(*errors, setError(errMessage, rule))
 	}
 	return
 }
-func in(validator Rules, key string, errors *[]error) {
-	inRule,ok:=getRule(validator.Rule, "in:")
+func in(rule Rule, key string, errors *[]error) {
+	inRule, ok := getRule(rule.Rule, "in:")
 	if !ok {
 		return
 	}
 
 	data := strings.Split(getStringRuleValue(inRule), ",")
 	for _, value := range data {
-		if value == validator.Value {
+		if value == rule.Value {
 			return
 		}
 	}
-	*errors = append(*errors, fmt.Errorf(invalidIn, key))
+	errMessage := fmt.Sprintf(invalidIn, key)
+	*errors = append(*errors, setError(errMessage, rule))
 }
-func required(validator Rules, key string, errors *[]error) {
-	_,ok:=getRule(validator.Rule, "required")
+func required(rule Rule, key string, errors *[]error) {
+	_, ok := getRule(rule.Rule, "required")
 	if !ok {
 		return
 	}
 
-	if validator.Value == "" || validator.Value == nil {
-		*errors = append(*errors, fmt.Errorf(invalidRequired, key))
+	if rule.Value == "" || rule.Value == nil {
+		errMessage := fmt.Sprintf(invalidRequired, key)
+		*errors = append(*errors, setError(errMessage, rule))
 	}
 }
-func calendar(validator Rules, key string, errors *[]error) {
-	if datetime(validator, key, errors) == false {
-		if date(validator, key, errors) == false {
-			timeFormat(validator, key, errors)
+func calendar(rule Rule, key string, errors *[]error) {
+	if datetime(rule, key, errors) == false {
+		if date(rule, key, errors) == false {
+			timeFormat(rule, key, errors)
 		}
 	}
 }
-func allowedEmptyOrDependsOtherField(validator Rules, validators map[string]Rules, key string, errors *[]error) bool {
-	if allowEmpty(validator) == true {
+func allowedEmptyOrDependsOtherField(rule Rule, validators map[string]Rule, key string, errors *[]error) bool {
+	if allowEmpty(rule) == true {
 		return true
 	}
-	if requiredIf(validator, validators, key, errors) == true {
+	if requiredIf(rule, validators, key, errors) == true {
 		return true
 	}
 	return false
 }
-func startsWith(validator Rules, key string, errors *[]error) {
-	startsWithRule,ok:=getRule(validator.Rule, "starts_with")
+func startsWith(rule Rule, key string, errors *[]error) {
+	startsWithRule, ok := getRule(rule.Rule, "starts_with")
 	if !ok {
 		return
 	}
 
 	targetPrefix := getStringRuleValue(startsWithRule)
-	value := fmt.Sprintf("%s", validator.Value)
+	value := fmt.Sprintf("%s", rule.Value)
 
 	if len(value) < len(targetPrefix) {
-		*errors = append(*errors, fmt.Errorf(invalidStartsWith, key, targetPrefix))
+		errMessage := fmt.Sprintf(invalidStartsWith, key, targetPrefix)
+		*errors = append(*errors, setError(errMessage, rule))
 		return
 	}
 
 	if value[0:len(targetPrefix)-1] != targetPrefix {
-		*errors = append(*errors, fmt.Errorf(invalidStartsWith, key, targetPrefix))
+		errMessage := fmt.Sprintf(invalidStartsWith, key, targetPrefix)
+		*errors = append(*errors, setError(errMessage, rule))
 	}
 }
-func endsWith(validator Rules, key string, errors *[]error) {
-	endsWithRule,ok:=getRule(validator.Rule, "ends_with")
+func endsWith(rule Rule, key string, errors *[]error) {
+	endsWithRule, ok := getRule(rule.Rule, "ends_with")
 	if !ok {
 		return
 	}
 
 	targetPrefix := getStringRuleValue(endsWithRule)
-	value := fmt.Sprintf("%s", validator.Value)
+	value := fmt.Sprintf("%s", rule.Value)
 
 	if len(value) < len(targetPrefix) {
-		*errors = append(*errors, fmt.Errorf(invalidEndsWith, key, targetPrefix))
+		errMessage := fmt.Sprintf(invalidEndsWith, key, targetPrefix)
+		*errors = append(*errors, setError(errMessage, rule))
 		return
 	}
 
 	if value[len(value)-len(targetPrefix):] != targetPrefix {
-		*errors = append(*errors, fmt.Errorf(invalidEndsWith, key, targetPrefix))
+		errMessage := fmt.Sprintf(invalidEndsWith, key, targetPrefix)
+		*errors = append(*errors, setError(errMessage, rule))
 	}
 }
-func regex(validator Rules, key string, errors *[]error) {
-	regexRule,ok:=getRule(validator.Rule, "regex:")
+func regex(rule Rule, key string, errors *[]error) {
+	regexRule, ok := getRule(rule.Rule, "regex:")
 	if !ok {
 		return
 	}
 
 	targetRegex := getStringRuleValue(regexRule)
 
-	if checkRegex(validator, key, targetRegex) == false {
-		*errors = append(*errors, fmt.Errorf(invalidRegex, key))
+	if checkRegex(rule, key, targetRegex) == false {
+		errMessage := fmt.Sprintf(invalidRegex, key)
+		*errors = append(*errors, setError(errMessage, rule))
 	}
 }
 
-func Validate(validators map[string]Rules) (errors []error) {
+func Validate(validators map[string]Rule) (errors []error) {
 	for key, validator := range validators {
 		validator.Value = strings.TrimSpace(fmt.Sprintf("%s", validator.Value))
 
@@ -314,7 +337,6 @@ func Validate(validators map[string]Rules) (errors []error) {
 	}
 	return
 }
-
 func ValidateStruct(param interface{}) (errors []error) {
 	structParam := reflect.TypeOf(param)
 	valueParam := reflect.ValueOf(param)
@@ -326,26 +348,30 @@ func ValidateStruct(param interface{}) (errors []error) {
 		return
 	}
 
-	validators := make(map[string]Rules)
+	validators := make(map[string]Rule)
 
 	// loop through each struct attribute
 	for i := 0; i < structParam.NumField(); i++ {
 		currField := structParam.Field(i)
 		currValue := valueParam.Field(i)
 
-		key, isUsingJsonTag := currField.Tag.Lookup("json")
-		if !isUsingJsonTag {
+		key, ok := currField.Tag.Lookup("json")
+		if !ok {
 			key = structParam.Field(i).Name
 		}
 
 		value := currValue.Interface()
-		rule, isUsingRuleTag := currField.Tag.Lookup("rule")
-
-		if !isUsingRuleTag {
+		rule, ok := currField.Tag.Lookup("rule")
+		if !ok {
 			continue
 		}
 
-		validators[key] = Rules{value, rule}
+		customMessage, ok := currField.Tag.Lookup("message")
+		if !ok {
+			customMessage = ""
+		}
+
+		validators[key] = Rule{Value: value, Rule: rule, CustomMessage: customMessage}
 	}
 
 	errors = Validate(validators)

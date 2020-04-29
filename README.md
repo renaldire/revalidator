@@ -9,7 +9,7 @@ Validator for golang.
 ## Usage
 
     validator:=map[string]Validator.Rules{  
-	   "<Field Name>":{<Value>,"<Rule 1>|<Rule 2>|...|<Rule n>"} 
+	   "<Field Name>":{<Value>,"<Rule 1>|<Rule 2>|...|<Rule n>",<Optional Custom Error Message>} 
 	}
 	
 	errs:=revalidator.Validate(validator)
@@ -18,6 +18,16 @@ Validator for golang.
 	}
 	
 ## What's new
+    Apr 29, 2020
+    ============
+    - Custom Error Message
+    "full name": {Value: "", Rule: "required", CustomMessage:"Nama harus diisi"}
+    
+    type User struct {
+        Name        string `rule:"required"`
+        FullName    string `rule:"required" message:"Nama Lengkap Wajib Diisi"`
+    }
+    
     Feb 03, 2020
     ============
     - Bug Fixes
@@ -50,8 +60,6 @@ Validator for golang.
     This only required once, only if you have to check unique value in database
 
 ## Example
-
-    
     import Validator "revalidator"
     
     name:=""  
@@ -63,13 +71,13 @@ Validator for golang.
     cc_number:=""  
       
     validator:=map[string]Validator.Rules{  
-       "name":{name,"required|min:5|max:10"},  
-       "age":{age,"required|numeric|min:18"},  
-       "gender":{gender,"required|in:male,female"},  
-       "email":{email,"allowempty|email"},  
-       "birthday":{birthday,"required|date"},  
-       "payment type":{payment_type,"required|in:cc,debit,cash"},  
-       "credit card number":{cc_number,"required_if:payment type,cc"},  
+       "name":{Value: name, Rule: "required|min:5|max:10"},  
+       "age":{Value: age, Rule: "required|numeric|min:18"},  
+       "gender":{Value: gender, Rule: "required|in:male,female"},  
+       "email":{Value: email, Rule: "allowempty|email", CustomMessage:"Emailnya Salah"},  
+       "birthday":{Value: birthday, Rule: "required|date"},  
+       "payment type":{Value: payment_type, Rule: "required|in:cc,debit,cash"},  
+       "credit card number":{Value: cc_number, Rule: "required_if:payment type,cc"},  
     }  
     errs:= Validator.Validate(validator) 
      
@@ -78,6 +86,7 @@ Validator for golang.
        return  
     }
 
+    Also see package example for more advanced example
 Result:
 
     [name is required. 
@@ -85,7 +94,7 @@ Result:
     age must be not less than 18 
     gender is required. 
     gender is invalid. 
-    email must be in e-mail format. 
+    Emailnya Salah. 
     birthday must be in yyyy-mm-dd format. 
     payment type is required. 
     payment type is invalid.]

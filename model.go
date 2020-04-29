@@ -1,6 +1,7 @@
 package Validator
 
-type Rules struct {
-	Value interface{}
-	Rule  string
+type Rule struct {
+	Value         interface{}
+	Rule          string
+	CustomMessage string
 }
